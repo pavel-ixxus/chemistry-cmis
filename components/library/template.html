@@ -1,0 +1,515 @@
+<!-- 
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+ -->
+ 
+ <div id="cmisbrowser-templates">
+
+	<script id="cmis-library-template" type="text/template">
+		<div class="errors"></div>
+		<div style="display: none;" class="login">
+			<div class="cmis-form">
+				<h1>Login<span>Please fill all the texts in the fields.</span></h1>
+				<p>
+					<label>
+						<span>Username :</span>
+						<input id="username" type="text" name="username" placeholder="Your User Name" autocomplete="off">
+					</label>
+					<label>
+						<span>Password :</span>
+						<input id="password" type="password" name="password" placeholder="Your Password">
+					</label>
+					<label>
+						<span>Remember you?</span>
+						<input id="remember" type="checkbox" name="remember">
+					</label>
+					<label>
+						<span>&nbsp;</span>
+						<input type="button" class="button" value="Login" id="login">
+					</label>
+				</p>
+			</div>
+		</div>
+		<div style="display: none;" class="library">
+			<div class="action-header">
+				<div class="query">
+					<input autocomplete="off" id="queryValue" placeholder="Search document(s)..." type="text">
+					<div id="queryButton"></div>
+					<div style="display: none;" id="queryClean"></div>
+					<div class="advanced-search"></div>
+				</div>
+				<div class="item logout">Logout</div>
+				<div class="item welcome">Welcome<span class="username"></span>.</div>
+				<div class="uploadDocument">
+					<div class="addDocument">Add new document.</div>
+					<div class="uploadarea">
+						<div class="uploadform">
+							<div class="container">
+								<label for="fileselect">Files to upload:</label>
+								<input multiple="multiple" name="fileselect[]" id="fileselect" autocomplete="off" type="file">
+								<br>
+								<button type="submit">Upload Files</button>
+							</div>
+						</div>
+						<div id="filedrag">
+							<div class="container">or drop files here...</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="documentlist panel">
+				<table class="table" cellspan="0">
+					<thead class="tableHeader"></thead>
+					<tbody class="tableBody"></tbody>
+				</table>
+				<div class="pagination">
+					<div class="label">Page(s): </div>
+				</div>
+			</div>
+			<div class="documentdetail panel"></div>
+			<div class="documentversion panel"></div>
+			<div class="documentpreview panel"></div>
+			<div class="advanced-search-form panel"></div>
+		</div>
+		<div style="display: none;" id="overlay"></div>
+	</script>
+
+	<script id="cmis-library-header-template" type="text/template">
+			<tr class="cmis-library-header">
+				<td class="cmis-library-cell icon"></td>
+				<td class="cmis-library-cell sortable" field="cmis:name">Name</td>
+				<td class="cmis-library-cell sortable" field="cmis:lastModificationDate">Modified</td>
+				<td class="cmis-library-cell sortable" field="cmis:lastModifiedBy">Modifier</td>
+				<td class="cmis-library-cell"></td>
+			</tr>
+		</script>
+
+	<script id="cmis-library-row-template" type="text/template">
+			<tr class="cmis-library-row" id="${cmis:objectId}" versionSeriesId="${cmis:versionSeriesId}" baseTypeId="${cmis:baseTypeId}" objectTypeId="${cmis:objectTypeId}" mimetype="${cmis:contentStreamMimeType}">
+				<td class="cmis-library-cell icon"></td>
+				<td class="cmis-library-cell cmis-name">${cmis:name}</td>
+				<td class="cmis-library-cell">${cmis:lastModificationDate}</td>
+				<td class="cmis-library-cell">${cmis:lastModifiedBy}</td>
+				<td class="cmis-library-cell actions">
+					<!-- <div class="icon icon-edit" enabled="${canUpdateProperties}" title="Edit Properties"></div> -->
+					<!-- <div class="icon icon-applyACL" enabled="${canApplyACL}" title="Manage Permissions"></div> -->
+					<div class="icon icon-download" enabled="${canGetContentStream}" title="Download"></div>
+					<div class="icon icon-preview" enabled="${canGetContentStream}" mimeType=${cmis:contentStreamMimeType} title="Preview"></div>
+				</td>
+				<td class="cmis-library-cell more-actions">
+					<span class="icon-more" title="More action(s)">...</span>
+					<div class="more-actions-popup detail-actions" style="display:none;">
+						<div class="icon icon-close" enabled="true" title="Close"></div>
+						<div class="icon icon-download" enabled="${canGetContentStream}" title="Download">Download</div>
+						<div class="icon icon-preview" enabled="${canGetContentStream}" mimeType=${cmis:contentStreamMimeType} title="Preview">Preview</div>
+						<div class="icon icon-view" enabled="${canGetProperties}" title="View Details">View Details</div>
+						<div class="icon icon-version" enabled="${canGetAllVersions}" title="Check Versions">Check Versions</div>
+						<div class="icon icon-checkin" enabled="${canCheckIn}" title="Check-In">Check-In</div>
+						<div class="icon icon-cancel-checkout" enabled="${canCancelCheckOut}" title="Cancel Check-Out">Cancel Check-Out</div>
+						<div class="icon icon-checkout" enabled="${canCheckOut}" title="Check-Out">Check-Out</div>
+						<div class="icon icon-update" enabled="${canSetContentStream}" title="Update">Update</div>
+						<div class="icon icon-delete" enabled="${canDeleteObject}" title="Delete">Delete</div>
+					</div>
+				</td>
+			</tr>
+		</script>
+
+	<script id="cmis-library-detail-template" type="text/template"
+		cmisType="_global">
+			<div class="detail">
+				<h2>Document Detail</h2>
+				<table>
+					<tr>
+						<td class="cmis-library-detail-label">Object Type Id</td>
+						<td class="cmis-library-detail-value">${cmis:objectTypeId}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Object Id</td>
+						<td class="cmis-library-detail-value">${cmis:versionSeriesId}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Name</td>
+						<td class="cmis-library-detail-value">${cmis:name}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">MIME Type</td>
+						<td class="cmis-library-detail-value">${cmis:contentStreamMimeType}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Creation Date</td>
+						<td class="cmis-library-detail-value date">${cmis:creationDate}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Created By</td>
+						<td class="cmis-library-detail-value">${cmis:createdBy}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified Date</td>
+						<td class="cmis-library-detail-value date">${cmis:lastModificationDate}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified By</td>
+						<td class="cmis-library-detail-value">${cmis:lastModifiedBy}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Is Checked Out?</td>
+						<td class="cmis-library-detail-value">${cmis:isVersionSeriesCheckedOut}</td>
+					</tr>
+				</table>
+			</div>
+			<div class="detail-actions" id="${cmis:objectId}" versionSeriesId="${cmis:versionSeriesId}">
+				<div class="icon icon-back icon-back-documents" enabled="true">Back to documents list</div>
+				<div class="icon icon-download" enabled="${canGetContentStream}"><a href="${cmis:contentUrl}">Download</a></div>
+				<div class="icon icon-version" enabled="${canGetAllVersions}">Check Versions</div>
+				<!-- <div class="icon icon-applyACL" enabled="${canApplyACL}">Manage Permissions</div> -->
+				<div class="icon icon-delete" enabled="${canDeleteObject}">Delete Document</div>
+			</div>
+		</script>
+
+	<script id="cmis-library-detail-template" type="text/template"
+		cmisType="cmis:folder">
+			<div class="detail">
+				<h2>Document Detail</h2>
+				<table>
+					<tr>
+						<td class="cmis-library-detail-label">Object Type Id</td>
+						<td class="cmis-library-detail-value">${cmis:objectTypeId}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Object Id</td>
+						<td class="cmis-library-detail-value">${cmis:objectId}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Name</td>
+						<td class="cmis-library-detail-value">${cmis:name}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Creation Date</td>
+						<td class="cmis-library-detail-value date">${cmis:creationDate}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Created By</td>
+						<td class="cmis-library-detail-value">${cmis:createdBy}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified Date</td>
+						<td class="cmis-library-detail-value date">${cmis:lastModificationDate}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified By</td>
+						<td class="cmis-library-detail-value">${cmis:lastModifiedBy}</td>
+					</tr>
+				</table>
+			</div>
+			<div class="detail-actions" id="${cmis:objectId}" versionSeriesId="${cmis:versionSeriesId}">
+				<div class="icon icon-back icon-back-documents" enabled="true">Back to documents list</div>
+				<!-- <div class="icon icon-applyACL" enabled="${canApplyACL}">Manage Permissions</div> -->
+				<div class="icon icon-delete" enabled="${canDeleteObject}">Delete Document</div>
+			</div>
+		</script>
+
+	<script id="cmis-library-version-template" type="text/template">
+			<div class="version" id="${cmis:objectId}" versionSeriesId="${cmis:versionSeriesId}">
+				<table>
+					<tr>
+						<td class="cmis-library-detail-label">Version</td>
+						<td class="cmis-library-detail-value">${cmis:versionLabel}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Name</td>
+						<td class="cmis-library-detail-value">${cmis:name}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified Date</td>
+						<td class="cmis-library-detail-value date">${cmis:lastModificationDate}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label">Last Modified By</td>
+						<td class="cmis-library-detail-value">${cmis:lastModifiedBy}</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-detail-label"></td>
+						<td class="cmis-library-detail-value download"><div class="icon-download icon">Download</td>
+					</tr>
+				</table>
+			</div>
+		</script>
+
+	<script id="cmis-library-advanced-search-template-content" class="cmis-library-advanced-search-template" type="text/template" cmisType="cmis:document" title="Content">
+			<div class="search-form">
+				<table align="center">
+					<tr>
+						<td class="cmis-library-search-form-label">Name</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cmis:name" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Title</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cm:title" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Description</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cm:description" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Mimetype</td>
+						<td class="cmis-library-search-form-input">
+							<select field="cmis:contentStreamMimeType" cmisPropertyType="string">
+								<option value="">Unknown</option>
+								<option value="video/3gpp">3G Video</option>
+								<option value="video/3gpp2">3G2 Video</option>
+								<option value="application/vnd.adobe.xdp+xml">Adobe Acrobat XML Data Package</option>
+								<option value="application/vnd.adobe.aftereffects.project">Adobe AfterEffects Project</option>
+								<option value="application/vnd.adobe.aftereffects.template">Adobe AfterEffects Template</option>
+								<option value="application/vnd.adobe.air-application-installer-package+zip">Adobe AIR</option>
+								<option value="image/x-raw-adobe">Adobe Digital Negative Image</option>
+								<option value="application/x-zip">Adobe Flex Project File</option>
+								<option value="application/framemaker">Adobe FrameMaker</option>
+								<option value="application/illustrator">Adobe Illustrator File</option>
+								<option value="application/x-indesign">Adobe InDesign Document</option>
+								<option value="application/pagemaker">Adobe PageMaker</option>
+								<option value="application/pdf">Adobe PDF Document</option>
+								<option value="image/vnd.adobe.photoshop">Adobe Photoshop</option>
+								<option value="image/vnd.adobe.premiere">Adobe Premiere</option>
+								<option value="audio/vnd.adobe.soundbooth">Adobe SoundBooth</option>
+								<option value="audio/x-aiff">AIFF Audio</option>
+								<option value="application/acp">Alfresco Content Package</option>
+								<option value="application/vnd.android.package-archive">Android Package</option>
+								<option value="image/x-portable-anymap">Anymap Image</option>
+								<option value="application/vnd.apple.keynote">Apple iWork Keynote</option>
+								<option value="application/vnd.apple.numbers">Apple iWork Numbers</option>
+								<option value="application/vnd.apple.pages">Apple iWork Pages</option>
+								<option value="image/vnd.dwg">AutoCAD Drawing</option>
+								<option value="image/x-dwt">AutoCAD Template</option>
+								<option value="audio/basic">Basic Audio</option>
+								<option value="application/octet-stream">Binary File (Octet Stream)</option>
+								<option value="image/bmp">Bitmap Image</option>
+								<option value="image/x-raw-canon">Canon RAW Image</option>
+								<option value="image/cgm">CGM Image</option>
+								<option value="text/csv">Comma Separated Values (CSV)</option>
+								<option value="application/dita+xml">DITA</option>
+								<option value="message/rfc822">EMail</option>
+								<option value="application/eps">EPS Type PostScript</option>
+								<option value="audio/x-flac">FLAC Audio</option>
+								<option value="application/x-fla">Flash Source</option>
+								<option value="video/x-flv">Flash Video</option>
+								<option value="image/x-raw-fuji">Fuji RAW Image</option>
+								<option value="image/gif">GIF Image</option>
+								<option value="image/x-portable-graymap">Greymap Image</option>
+								<option value="application/x-gzip">GZIP</option>
+								<option value="application/x-gtar">GZIP Tarball</option>
+								<option value="image/x-raw-hasselblad">Hasselblad RAW Image</option>
+								<option value="text/html">HTML</option>
+								<option value="application/vnd.oasis.opendocument.text-web">HTML Document Template</option>
+								<option value="text/calendar">iCalendar File</option>
+								<option value="image/ief">IEF Image</option>
+								<option value="application/java">Java Class</option>
+								<option value="application/x-javascript">Java Script</option>
+								<option value="image/jp2">JPEG 2000 Image</option>
+								<option value="image/jpeg">JPEG Image</option>
+								<option value="application/json">JSON</option>
+								<option value="image/x-raw-kodak">Kodak RAW Image</option>
+								<option value="application/x-latex">LaTeX</option>
+								<option value="image/x-raw-leica">Leica RAW Image</option>
+								<option value="application/x-troff-man">Man Page</option>
+								<option value="text/x-markdown">Markdown</option>
+								<option value="text/mediawiki">MediaWiki Markup</option>
+								<option value="application/vnd.ms-excel">Microsoft Excel</option>
+								<option value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Microsoft Excel 2007</option>
+								<option value="application/vnd.ms-excel.addin.macroenabled.12">Microsoft Excel 2007 add-in</option>
+								<option value="application/vnd.ms-excel.sheet.binary.macroenabled.12">Microsoft Excel 2007 binary workbook</option>
+								<option value="application/vnd.ms-excel.sheet.macroenabled.12">Microsoft Excel 2007 macro-enabled workbook</option>
+								<option value="application/vnd.ms-excel.template.macroenabled.12">Microsoft Excel 2007 macro-enabled workbook template</option>
+								<option value="application/vnd.openxmlformats-officedocument.spreadsheetml.template">Microsoft Excel template 2007</option>
+								<option value="application/vnd.ms-outlook">Microsoft Outlook Message</option>
+								<option value="application/vnd.ms-powerpoint">Microsoft PowerPoint</option>
+								<option value="application/vnd.ms-powerpoint.addin.macroenabled.12">Microsoft PowerPoint 2007 add-in</option>
+								<option value="application/vnd.ms-powerpoint.presentation.macroenabled.12">Microsoft PowerPoint 2007 macro-enabled presentation</option>
+								<option value="application/vnd.ms-powerpoint.template.macroenabled.12">Microsoft PowerPoint 2007 macro-enabled presentation template</option>
+								<option value="application/vnd.ms-powerpoint.slide.macroenabled.12">Microsoft PowerPoint 2007 macro-enabled slide</option>
+								<option value="application/vnd.ms-powerpoint.slideshow.macroenabled.12">Microsoft PowerPoint 2007 macro-enabled slide show</option>
+								<option value="application/vnd.openxmlformats-officedocument.presentationml.presentation">Microsoft PowerPoint 2007 presentation</option>
+								<option value="application/vnd.openxmlformats-officedocument.presentationml.slide">Microsoft PowerPoint 2007 slide</option>
+								<option value="application/vnd.openxmlformats-officedocument.presentationml.slideshow">Microsoft PowerPoint 2007 slide show</option>
+								<option value="application/vnd.openxmlformats-officedocument.presentationml.template">Microsoft PowerPoint 2007 template</option>
+								<option value="application/vnd.ms-project">Microsoft Project</option>
+								<option value="application/vnd.visio">Microsoft Visio</option>
+								<option value="application/msword">Microsoft Word</option>
+								<option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">Microsoft Word 2007</option>
+								<option value="application/vnd.ms-word.document.macroenabled.12">Microsoft Word 2007 macro-enabled document</option>
+								<option value="application/vnd.ms-word.template.macroenabled.12">Microsoft Word 2007 macro-enabled document template</option>
+								<option value="application/vnd.openxmlformats-officedocument.wordprocessingml.template">Microsoft Word 2007 template</option>
+								<option value="image/x-raw-minolta">Minolta RAW Image</option>
+								<option value="audio/mpeg">MPEG Audio</option>
+								<option value="video/mp2t">MPEG Transport Stream</option>
+								<option value="video/mpeg">MPEG Video</option>
+								<option value="video/mpeg2">MPEG2 Video</option>
+								<option value="audio/mp4">MPEG4 Audio</option>
+								<option value="video/mp4">MPEG4 Video</option>
+								<option value="video/x-m4v">MPEG4 Video (m4v)</option>
+								<option value="video/x-ms-asf">MS ASF Streaming Video</option>
+								<option value="video/x-msvideo">MS Video</option>
+								<option value="audio/x-ms-wma">MS WMA Streaming Audio</option>
+								<option value="video/x-ms-wmv">MS WMV Streaming Video</option>
+								<option value="image/x-raw-nikon">Nikon RAW Image</option>
+								<option value="audio/ogg">Ogg Audio</option>
+								<option value="application/ogg">Ogg Multiplex</option>
+								<option value="video/ogg">Ogg Video</option>
+								<option value="audio/vorbis">Ogg Vorbis Audio</option>
+								<option value="image/x-raw-olympus">Olympus RAW Image</option>
+								<option value="application/vnd.oasis.opendocument.chart">OpenDocument Chart</option>
+								<option value="application/vnd.oasis.opendocument.database">OpenDocument Database</option>
+								<option value="application/vnd.oasis.opendocument.graphics">OpenDocument Drawing</option>
+								<option value="application/vnd.oasis.opendocument.graphics-template">OpenDocument Drawing Template</option>
+								<option value="application/vnd.oasis.opendocument.formula">OpenDocument Formula</option>
+								<option value="application/vnd.oasis.opendocument.image">OpenDocument Image</option>
+								<option value="application/vnd.oasis.opendocument.text-master">OpenDocument Master Document</option>
+								<option value="application/vnd.oasis.opendocument.presentation">OpenDocument Presentation</option>
+								<option value="application/vnd.oasis.opendocument.presentation-template">OpenDocument Presentation Template</option>
+								<option value="application/vnd.oasis.opendocument.spreadsheet">OpenDocument Spreadsheet</option>
+								<option value="application/vnd.oasis.opendocument.spreadsheet-template">OpenDocument Spreadsheet Template</option>
+								<option value="application/vnd.oasis.opendocument.text">OpenDocument Text (OpenOffice 2.0)</option>
+								<option value="application/vnd.oasis.opendocument.text-template">OpenDocument Text Template</option>
+								<option value="application/vnd.sun.xml.calc">OpenOffice 1.0/StarOffice6.0 Calc 6.0</option>
+								<option value="application/vnd.sun.xml.calc.template">OpenOffice 1.0/StarOffice6.0 Calc 6.0 Template</option>
+								<option value="application/vnd.sun.xml.draw">OpenOffice 1.0/StarOffice6.0 Draw 6.0</option>
+								<option value="application/vnd.sun.xml.impress">OpenOffice 1.0/StarOffice6.0 Impress 6.0</option>
+								<option value="application/vnd.sun.xml.impress.template">OpenOffice 1.0/StarOffice6.0 Impress 6.0 Template</option>
+								<option value="application/vnd.sun.xml.writer">OpenOffice 1.0/StarOffice6.0 Writer 6.0</option>
+								<option value="application/vnd.sun.xml.writer.template">OpenOffice 1.0/StarOffice6.0 Writer 6.0 Template</option>
+								<option value="image/x-raw-panasonic">Panasonic RAW Image</option>
+								<option value="image/x-raw-pentax">Pentax RAW Image</option>
+								<option value="image/x-portable-pixmap">Pixmap Image</option>
+								<option value="text/plain">Plain Text</option>
+								<option value="image/png">PNG Image</option>
+								<option value="image/x-portable-bitmap">Portable Bitmap</option>
+								<option value="application/postscript">PostScript</option>
+								<option value="application/remote-printing">Printer Text File</option>
+								<option value="video/quicktime">Quicktime Video</option>
+								<option value="video/x-rad-screenplay">RAD Screen Display</option>
+								<option value="image/x-cmu-raster">Raster Image</option>
+								<option value="image/x-raw-red">RED RAW Image</option>
+								<option value="image/x-rgb">RGB Image</option>
+								<option value="text/richtext">Rich Text</option>
+								<option value="application/rtf">Rich Text Format</option>
+								<option value="application/rss+xml">RSS</option>
+								<option value="image/svg+xml">Scalable Vector Graphics Image</option>
+								<option value="video/x-sgi-movie">SGI Video</option>
+								<option value="text/sgml">SGML (Human Readable)</option>
+								<option value="application/sgml">SGML (Machine Readable)</option>
+								<option value="application/x-sh">Shell Script</option>
+								<option value="application/x-shockwave-flash">Shockwave Flash</option>
+								<option value="image/x-raw-sigma">Sigma RAW Image</option>
+								<option value="image/x-raw-sony">Sony RAW Image</option>
+								<option value="application/vnd.stardivision.chart">StaChart 5.x</option>
+								<option value="application/vnd.stardivision.calc">StarCalc 5.x</option>
+								<option value="application/vnd.stardivision.draw">StarDraw 5.x</option>
+								<option value="application/vnd.stardivision.impress">StarImpress 5.x</option>
+								<option value="application/vnd.stardivision.impress-packed">StarImpress Packed 5.x</option>
+								<option value="application/vnd.stardivision.math">StarMath 5.x</option>
+								<option value="application/vnd.stardivision.writer">StarWriter 5.x</option>
+								<option value="application/vnd.stardivision.writer-global">StarWriter 5.x global</option>
+								<option value="text/css">Style Sheet</option>
+								<option value="text/tab-separated-values">Tab Separated Values</option>
+								<option value="application/x-tar">Tarball</option>
+								<option value="application/x-tex">Tex</option>
+								<option value="application/x-texinfo">Tex Info</option>
+								<option value="image/tiff">TIFF Image</option>
+								<option value="x-world/x-vrml">VRML</option>
+								<option value="audio/x-wav">WAV Audio</option>
+								<option value="video/webm">WebM Video</option>
+								<option value="application/wordperfect">WordPerfect</option>
+								<option value="image/x-xbitmap">XBitmap Image</option>
+								<option value="application/xhtml+xml">XHTML</option>
+								<option value="text/xml">XML</option>
+								<option value="image/x-xpixmap">XPixmap Image</option>
+								<option value="image/x-xwindowdump">XWindow Dump</option>
+								<option value="application/x-compress">Z Compress</option>
+								<option value="application/zip">ZIP</option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Modified Date</td>
+						<td class="cmis-library-search-form-input">
+							<div><input field="cmis:lastModificationDate" cmisPropertyType="date" rangeOperator="from" placeHolder="From (YYYY-MM-DD)"/></div>
+							<div><input field="cmis:lastModificationDate" cmisPropertyType="date" rangeOperator="to" placeHolder="To (YYYY-MM-DD)" /></div>
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Modifier</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cmis:lastModifiedBy" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Content Size</td>
+						<td class="cmis-library-search-form-input">
+							<div><input field="cmis:contentStreamLength" cmisPropertyType="int" rangeOperator="from" placeHolder="From"/></div>
+							<div><input field="cmis:contentStreamLength" cmisPropertyType="int" rangeOperator="to" placeHolder="To" /></div>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							<button type="button" class="search-button">Search</button>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</script>
+
+	<script id="cmis-library-advanced-search-template-folder" class="cmis-library-advanced-search-template" type="text/template" cmisType="cmis:folder" title="Folder">
+			<div class="search-form">
+				<table align="center">
+					<tr>
+						<td class="cmis-library-search-form-label">Name</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cmis:name" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Title</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cm:title" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Description</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cm:description" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td class="cmis-library-search-form-label">Modifier</td>
+						<td class="cmis-library-search-form-input">
+							<input field="cmis:lastModifiedBy" cmisPropertyType="string" />
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							<button type="button" class="search-button">Search</button>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</script>
+</div>
