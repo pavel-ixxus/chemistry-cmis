@@ -330,7 +330,7 @@
 	 * @ulElem: reference to the UL tag corresponding to the parent node
 	 * @data: JSON Object retrieved from CMIS
 	 */
-	Browser.prototype._appendItem = function(ulElem, data) {
+	Browser.prototype._appendItem = function(ulElem, data, isFile) {
 		var browser = this;
 		var parentItem;
 
@@ -343,42 +343,46 @@
 
 		// Check the type
 		if (this.options.excludingFilter.indexOf(data.properties["cmis:objectTypeId"].value) == -1) {
-			// Get the template related to a new item
-			var browserItemTemplate = $("#cmis-browser-item-template");
-			var newItem = browserItemTemplate.html();
-
-			// Replace properties
-			$(Object.keys(data.properties)).each(function(index, argName) {
-				var regexp = new RegExp('\\$\\{' + argName + '\\}', 'g');
-				newItem = newItem.replace(regexp, data.properties[argName].value);
-			});
-
-			// Replace allowable actions
-			$(Object.keys(data.allowableActions)).each(function(index, argName) {
-				newItem = newItem.replace('${' + argName + '}', data.allowableActions[argName]);
-			});
-
-			newItem = $(newItem);
-
-			// Hide useless icon
-			newItem.find(".icon[enabled='false']").hide();
-
-			// Attach actions
-			newItem.find(".icon-open, .label").click(function(event, index) {
-				browser._onClickFolder(this);
-			});
-			newItem.find(".icon-delete[enabled='true']").click(function(event, index) {
-				browser._onClickDeleteFolder(this);
-			});
-			newItem.find(".icon-edit[enabled='true']").click(function(event, index) {
-				browser._onClickEditFolder(this);
-			});
-			newItem.find(".icon-add[enabled='true']").click(function(event, index) {
-				browser._onClickAddFolder(this);
-			});
-
-			// Append the new item
-			$(parentItem).append(newItem);
+      if( isFile ) {
+        var newFileItem = $("#cmis-browser-file-template").html();
+        // Replace properties
+        $(Object.keys(data.properties)).each(function(index, argName) {
+            var regexp = new RegExp('\\$\\{' + argName + '\\}', 'g');
+            newFileItem = newFileItem.replace(regexp, data.properties[argName].value);
+        });        
+        newFileItem = $(newFileItem);
+        $(parentItem).append(newFileItem);
+      } else {
+        var browserItemTemplate = $("#cmis-browser-item-template");
+        var newItem = browserItemTemplate.html();
+        // Replace properties
+        $(Object.keys(data.properties)).each(function(index, argName) {
+            var regexp = new RegExp('\\$\\{' + argName + '\\}', 'g');
+            newItem = newItem.replace(regexp, data.properties[argName].value);
+        });        
+        // Replace allowable actions
+        $(Object.keys(data.allowableActions)).each(function(index, argName) {
+            newItem = newItem.replace('${' + argName + '}', data.allowableActions[argName]);
+        });
+        newItem = $(newItem);
+        // Hide useless icon
+        newItem.find(".icon[enabled='false']").hide();
+        // Attach actions
+        newItem.find(".icon-open, .label").click(function(event, index) {
+            browser._onClickFolder(this);
+        });
+        newItem.find(".icon-delete[enabled='true']").click(function(event, index) {
+            browser._onClickDeleteFolder(this);
+        });
+        newItem.find(".icon-edit[enabled='true']").click(function(event, index) {
+            browser._onClickEditFolder(this);
+        });
+        newItem.find(".icon-add[enabled='true']").click(function(event, index) {
+            browser._onClickAddFolder(this);
+        });
+        // Append the new item
+        $(parentItem).append(newItem);
+			}
 		}
 	};
 
@@ -415,6 +419,7 @@
 			var objectId = $(folderItem).attr("id");
 			// Get the list
 			var list = $(folderItem).closest("li").find("ul");
+			var dataFolders;
 
 			$(browser.element).find(".menu-item").removeClass("selected");
 			$(folderItem).addClass("selected");
@@ -430,19 +435,37 @@
 				includeAllowableActions : true,
 				request : {
 					success : function(data) {
-						// Empty the list of child folder
-						$(list).empty();
-						// Add all sub folders
-						$(data.results).each(function(index) {
-							browser._appendItem(list, this);
-						});
-						// Allow to add new sub-folder
-						$(folderItem).find(".icon-add[enabled='true']").show();
-						$(browser.element).find("#overlay").fadeOut();
+					  //{{{PX56
+					  dataFolders = data;
+            session.query('select * from cmis:document where IN_FOLDER(\'' + objectId + '\') order by cmis:name', false, {
+                includeAllowableActions : true,
+                request : {
+                  success : function(data) {
+                    // Empty the list of children
+                    $(list).empty();
+                    // Add all sub folders and files
+                    $(dataFolders.results).each(function(index) {
+                        browser._appendItem(list, this);
+                    });
+                    $(data.results).each(function(index) {
+                        browser._appendItem(list, this, true);
+                    });
+                    // Allow to add new sub-folder
+                    $(folderItem).find(".icon-add[enabled='true']").show();
+                    $(browser.element).find("#overlay").fadeOut();
+                  },
+                  error : function(jqXHR, textStatus, errorThrown) {
+                    // Display an error
+                    browser._addError("Can't get files of " + objectId);
+                    $(browser.element).find("#overlay").fadeOut();
+                  }
+                }
+            });
+            //}}}
 					},
 					error : function(jqXHR, textStatus, errorThrown) {
 						// Display an error
-						browser._addError("Can't get the children from the object " + objectId + " in the repository.");
+						browser._addError("Can't get subfolders of " + objectId);
 						$(browser.element).find("#overlay").fadeOut();
 					}
 				}

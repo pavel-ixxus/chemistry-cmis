@@ -16,38 +16,46 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  -->
- 
- <div id="cmisbrowser-templates">
 
-	<script id="cmis-browser-template" type="text/template">
-		<div class="errors"></div>
-		<div style="display: none;" class="login">
-		</div>
-		<div style="display: none;" class="browser">
-			<div class="button getCheckedOutDocs">Show my checked-out documents</div>
-			<ul class="root static">
-			</ul>
-		</div>
-		<div id="overlay"></div>
-	</script>
-
-	<script id="cmis-browser-item-template" type="text/template">
-			<li class="static"><div class="static menu-item"
-					id="${cmis:objectId}">
-					<div class="folderName">
-						<div class="icons">
-							<div class="icon icon-open closed" enabled="${canGetChildren}"></div>
-						</div>
-						<div class="editText label" id="${cmis:objectId}/name">${cmis:name}</div>
-						<div class="actions">
-							<div class="icon icon-add" enabled="${canCreateFolder}"></div>
-							<div class="icon icon-edit" enabled="${canUpdateProperties}"></div>
-							<div class="icon icon-delete" enabled="${canDeleteObject}"></div>
-						</div>
-					</div>
-				</div>
-				<ul class="static">
-				</ul></li>
-		</script>
-
+<div id="cmisbrowser-templates">
+	
+  <script id="cmis-browser-template" type="text/template">
+    <div class="errors"></div>
+    <div style="display: none;" class="login"></div>
+    <div style="display: none;" class="browser">
+      <!-- div class="button getCheckedOutDocs">Show my checked-out documents</div -->
+      <ul class="root static"></ul>
+    </div>
+    <div id="overlay"></div>
+  </script>
+	
+  <script id="cmis-browser-item-template" type="text/template">
+    <li class="static">
+      <div class="static menu-item" id="${cmis:objectId}">
+        <div class="folderName">
+          <div class="icons">
+            <div class="icon icon-open closed" enabled="${canGetChildren}"></div>
+          </div>
+          <div class="editText label" id="${cmis:objectId}/name">${cmis:name}</div>
+          <div class="actions">
+            <div class="icon icon-add" enabled="${canCreateFolder}"></div>
+            <div class="icon icon-edit" enabled="${canUpdateProperties}"></div>
+            <div class="icon icon-delete" enabled="${canDeleteObject}"></div>
+          </div>
+        </div>
+      </div>
+      <ul class="static"></ul>
+    </li>
+  </script>
+	
+  <script id="cmis-browser-file-template" type="text/template">
+    <li class="static">
+      <div class="static menu-item" id="${cmis:objectId}">
+        <div class="fileName">
+          <div class="editText label" id="${cmis:objectId}/name"><b>${cmis:name}</b></div>
+        </div>
+      </div>
+      <ul class="static"></ul>
+    </li>
+  </script>
 </div>

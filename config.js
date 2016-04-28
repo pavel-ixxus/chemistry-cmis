@@ -20,3 +20,9 @@ var cmisOptions = {
 	, username : "admin"
 	, password : "abs"
 };
+
+/* var cmisOptions = {
+	serverUrl : "https://52.18.182.175:8443/alfresco/api/-default-/public/cmis/versions/1.1/browser"
+	, username : "kyle"
+	, password : "12345678"
+}; */
