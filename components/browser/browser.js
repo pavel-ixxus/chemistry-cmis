@@ -64,6 +64,8 @@
 		this._name = pluginName;
 
 		this.init();
+
+		this._alfLogin();
 	}
 
 	/**
@@ -114,7 +116,19 @@
 				browser._load();
 			}
 		});
+	};
 
+	/**
+	 * Hack - log in to Alfresco API in the background
+	 */
+	Browser.prototype._alfLogin = function() {
+		// Login to Alfresco API
+		//var client = new XMLHttpRequest();
+		//var baseUrl = this.options.cmis.serverUrl.replace("/api/-default-/public/cmis/versions/1.1/browser", "");
+		//client.open("POST", baseURL + "/s/api/login", false);
+		//client.send("{ username: '" + this.options.cmis.username + "', password: '" + this.options.cmis.password + "' }");
+		// and now get ticket from response?
+		// TODO currently the first request to Alfresco API asks for login - could we avoid that by doing it behind the scenes for the user?
 	};
 
 	/**
@@ -351,6 +365,12 @@
             newFileItem = newFileItem.replace(regexp, data.properties[argName].value);
         });        
         newFileItem = $(newFileItem);
+		newFileItem.find(".icon-preview").click(function(event, index) {
+            browser._onClickPreviewFile(this);
+        });
+		newFileItem.find(".icon-download").click(function(event, index) {
+            browser._onClickDownloadFile(this);
+        });
         $(parentItem).append(newFileItem);
       } else {
         var browserItemTemplate = $("#cmis-browser-item-template");
@@ -593,6 +613,64 @@
 			$(this).select();
 		});
 	};
+
+	/**
+	 * View file handler
+	 * 
+	 * @elem: HTML element clicked
+	 */
+	Browser.prototype._onClickPreviewFile = function(icon) {
+		var item = $(icon).closest(".menu-item");
+		var name = $(item).find(".editText");
+		var prop = $(item).find(".hiddenProperty");
+		this._previewFile(name[0], prop[0]);
+	},
+
+	Browser.prototype._previewFile = function(actual, prop) {
+		var uuid = prop.innerText.replace("workspace://SpacesStore/", "");
+		var baseUrl = this.options.cmis.serverUrl.replace("/api/-default-/public/cmis/versions/1.1/browser", "");
+		var previewUrl = baseUrl + "/service/api/node/workspace/SpacesStore/" + uuid + "/content/thumbnails/imgpreview?c=force";
+		var downloadUrl = baseUrl + "/service/api/node/workspace/SpacesStore/" + uuid + "/content?a=false";
+
+		var prvw = document.getElementById("previewpane");
+		var prvwString = "";
+		if (actual.innerHTML.indexOf("mp4") > 0) {
+			prvwString = "<video controls><source src='" + downloadUrl + "' type='video/mp4' />Your browser does not support the video tag.</video>";
+		} else if (actual.innerHTML.indexOf("mpg") > 0) {
+			prvwString = "<video controls><source src='" + downloadUrl + "' type='video/mpg' />Your browser does not support the video tag.</video>";
+		} else if (actual.innerHTML.indexOf("avi") > 0) {
+			prvwString = "<video controls><source src='" + previewUrl + "' type='video/avi' />Your browser does not support the video tag.</video>";
+		} else {
+			prvwString = "<img src='" + previewUrl + "'/>";
+		}
+		prvwString += "<br/><a href='javascript:closePreview();'>Close Preview</a>"
+
+		prvw.innerHTML = prvwString;
+		prvw.style.visibility = "visible";
+		prvw.style.display = "block";
+		window.scrollTo(0, 0);
+	},
+
+	/**
+	 * Download file handler
+	 * 
+	 * @elem: HTML element clicked
+	 */
+	Browser.prototype._onClickDownloadFile = function(icon) {
+		var item = $(icon).closest(".menu-item");
+		var name = $(item).find(".editText");
+		var prop = $(item).find(".hiddenProperty");
+		this._downloadFile(name[0], prop[0]);
+	},
+
+	Browser.prototype._downloadFile = function(actual, prop) {
+		var uuid = prop.innerText.replace("workspace://SpacesStore/", "");
+		var baseUrl = this.options.cmis.serverUrl.replace("/api/-default-/public/cmis/versions/1.1/browser", "");
+		var downloadUrl = baseUrl + "/service/api/node/workspace/SpacesStore/" + uuid + "/content?a=false";
+		// or use CMIS URL to reuse the existing login? this.options.cmis.token - or authorization header
+		//var downloadUrl = this.options.cmis.serverUrl + "/root?objectId=" + uuid + "&cmisselector=content";
+	    window.open(downloadUrl);
+	},
 
 	/**
 	 * Key press event handler
