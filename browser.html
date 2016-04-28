@@ -34,7 +34,7 @@ body {
 }
 </style>
 <!-- jQuery Dependency -->
-<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="jquery/jquery-1.11.1.js"></script>
 <!-- CMIS Library -->
 <script src="lib/cmis.js"></script>
 <!-- Browser component -->
@@ -50,11 +50,18 @@ body {
 
 		var browserId = $("#browser").cmisbrowser(options);
 	});
+
+	function closePreview() {
+		var prvw = document.getElementById("previewpane");
+		prvw.style.visibility = "hidden";
+		prvw.style.display = "none";
+	}
 </script>
 </head>
 <body>
 
 	<div id="browser" class="cmisbrowser"></div>
 
+	<div id="previewpane" class="previewpane"></div>
 </body>
 </html>
