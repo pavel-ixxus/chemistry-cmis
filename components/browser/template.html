@@ -52,7 +52,12 @@ under the License.
     <li class="static">
       <div class="static menu-item" id="${cmis:objectId}">
         <div class="fileName">
+          <span class="hiddenProperty">${alfcmis:nodeRef}</span>
           <div class="editText label" id="${cmis:objectId}/name"><b>${cmis:name}</b></div>
+          <div class="actions">
+            <div class="icon icon-preview"></div>
+            <div class="icon icon-download"></div>
+          </div>
         </div>
       </div>
       <ul class="static"></ul>
